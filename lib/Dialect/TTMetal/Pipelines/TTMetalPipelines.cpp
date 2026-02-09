@@ -126,6 +126,12 @@ void createTTIRToTTMetalMiddleendPipeline(
   pm.addPass(createLinalgElementwiseOpFusionPass());
   pm.addPass(mlir::createCanonicalizerPass());
   createTTIRBufferizationPipeline(pm, options);
+  d2m::D2MGenericApplyInterchangeOptions applyInterchangeOptions;
+  {
+    applyInterchangeOptions.matmulInterchange =
+        llvm::to_vector(options.matmulInterchange);
+  }
+  pm.addPass(d2m::createD2MGenericApplyInterchange(applyInterchangeOptions));
   d2m::D2MAllocateOptions allocateOptions;
   {
     allocateOptions.numStreamBuffers = options.numStreamBuffers;
@@ -141,12 +147,6 @@ void createTTIRToTTMetalMiddleendPipeline(
   pm.addPass(createCanonicalizerPassWithOptions(options));
   pm.addPass(d2m::createD2MDecomposeMasking());
 
-  d2m::D2MGenericApplyInterchangeOptions applyInterchangeOptions;
-  {
-    applyInterchangeOptions.matmulInterchange =
-        llvm::to_vector(options.matmulInterchange);
-  }
-  pm.addPass(d2m::createD2MGenericApplyInterchange(applyInterchangeOptions));
   d2m::D2MGenericTileComputeLoopsOptions tileComputeLoopsOptions;
   {
     tileComputeLoopsOptions.maxDstPhysicalSizeTiles =
