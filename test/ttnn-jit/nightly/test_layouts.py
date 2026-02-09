@@ -95,6 +95,12 @@ DRAM_INTERLEAVED_SHAPE_GRIDS.extend(
 )
 @pytest.mark.parametrize("op", [abs])
 def test_l1_block_sharded_shapes(device, shape, max_grid, op):
+    output_memory_config = ttnn.create_sharded_memory_config(
+        shape=shape,
+        core_grid=ttnn.CoreGrid(x=max_grid[0] + 1, y=max_grid[1] + 1),
+        strategy=ttnn.ShardStrategy.BLOCK,
+        use_height_and_width_as_shard_shape=False,
+    )
     run_op_test(
         device,
         shape,
@@ -105,6 +111,7 @@ def test_l1_block_sharded_shapes(device, shape, max_grid, op):
         buffer_type=ttnn.BufferType.L1,
         enable_cache=True,
         shard_strategy=ttnn.ShardStrategy.BLOCK,
+        memory_config=output_memory_config,
     )
 
 
@@ -150,8 +157,8 @@ SKIPPED_HEIGHT_SHARDED_CASES = [
 )
 @pytest.mark.parametrize("op", [abs])
 def test_l1_height_sharded_shapes(device, shape, max_grid, op):
-    if (shape, max_grid) in SKIPPED_HEIGHT_SHARDED_CASES:
-        pytest.skip("Allocator failures due to insufficient L1 for some reason.")
+    # if (shape, max_grid) in SKIPPED_HEIGHT_SHARDED_CASES:
+    #     pytest.skip("Allocator failures due to insufficient L1 for some reason.")
     output_memory_config = ttnn.create_sharded_memory_config(
         shape=shape,
         core_grid=ttnn.CoreGrid(x=max_grid[0] + 1, y=max_grid[1] + 1),
@@ -210,6 +217,12 @@ WIDTH_SHARDED_SHAPE_GRIDS.extend(
 )
 @pytest.mark.parametrize("op", [abs])
 def test_l1_width_sharded_shapes(device, shape, max_grid, op):
+    output_memory_config = ttnn.create_sharded_memory_config(
+        shape=shape,
+        core_grid=ttnn.CoreGrid(x=max_grid[0] + 1, y=max_grid[1] + 1),
+        strategy=ttnn.ShardStrategy.WIDTH,
+        use_height_and_width_as_shard_shape=False,
+    )
     run_op_test(
         device,
         shape,
@@ -220,6 +233,7 @@ def test_l1_width_sharded_shapes(device, shape, max_grid, op):
         buffer_type=ttnn.BufferType.L1,
         enable_cache=True,
         shard_strategy=ttnn.ShardStrategy.WIDTH,
+        memory_config=output_memory_config,
     )
 
 
