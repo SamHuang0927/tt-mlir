@@ -2079,22 +2079,21 @@ def TTIR_RMSNormOp : TTIR_NamedOp<"rms_norm", [AttrSizedOperandSegments]> {
   let hasVerifier = 1;
 }
 
-def TTIR_DistributedRMSNormOp : TTIR_NamedOp<"distributed_rms_norm", [AttrSizedOperandSegments]> {
+def TTIR_DistributedRMSNormOp : TTIR_NamedOp<"distributed_rms_norm"> {
   let summary = "Distributed RMS normalization with all-gather operation";
   let description = [{
-    Performs a fused distributed RMS normalization followed by an all-gather
-    collective operation across mesh devices. This operation combines:
-    1. Optional residual addition (input + residual)
-    2. RMS normalization: output = input * rsqrt(mean(input^2) + epsilon) * weight
-    3. All-gather to collect results across cluster_axis
+    Performs distributed RMS (Root Mean Square) normalization on the input tensor
+    followed by an all-gather collective operation across mesh devices. This operation
+    normalizes the input tensor by computing the root mean square of elements and
+    dividing by that value, optionally scaling and shifting the result.
 
     This is a multi-device operation that requires the tensor to be sharded
     across a device mesh.
 
     Inputs:
-    - `input` (Tensor): The input tensor to be normalized (must be width-sharded).
-    - `weight` (Optional Tensor): The scale parameter (gamma).
-    - `residual` (Optional Tensor): Optional residual tensor for fused add.
+    - `input` (Tensor): The input tensor to be normalized (must be sharded).
+    - `weight` (Optional Tensor): The scale parameter (gamma). If provided, the normalized
+      result is element-wise multiplied by this weight.
 
     Attributes:
     - `cluster_axis` specifies which mesh dimension to all-gather across (0 or 1).
@@ -2102,11 +2101,13 @@ def TTIR_DistributedRMSNormOp : TTIR_NamedOp<"distributed_rms_norm", [AttrSizedO
 
     Output:
     - `result` (Tensor): The normalized and gathered output tensor.
+
+    Mathematical definition: distributed_rms_norm(x, weight, epsilon) =
+      (x / sqrt(mean(x^2) + epsilon)) * weight
   }];
 
   let arguments = (ins AnyRankedTensor:$input,
                        Optional<AnyRankedTensor>:$weight,
-                       Optional<AnyRankedTensor>:$residual,
                        UI32Attr:$cluster_axis,
                        DefaultValuedAttr<F32Attr, "1e-05">:$epsilon);
 

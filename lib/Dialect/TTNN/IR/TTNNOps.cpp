@@ -2792,9 +2792,25 @@ static ::mlir::LogicalResult verifyTTNNBatchNormOp(OpType op) {
   RankedTensorType inputType = getInput().getType();
   RankedTensorType outputType = getResult().getType();
 
-  // Input and output must have the same shape.
-  if (inputType.getShape() != outputType.getShape()) {
-    return emitOpError("input and output must have the same shape");
+  // Input and output must have the same rank.
+  if (inputType.getRank() != outputType.getRank()) {
+    return emitOpError("input and output must have the same rank");
+  }
+
+  // All dimensions except the last must match. The last dimension of the
+  // output is the all-gathered size, which must be >= the input's last
+  // dimension.
+  ArrayRef<int64_t> inputShape = inputType.getShape();
+  ArrayRef<int64_t> outputShape = outputType.getShape();
+  for (int64_t i = 0; i < inputType.getRank() - 1; ++i) {
+    if (inputShape[i] != outputShape[i]) {
+      return emitOpError("input and output shapes must match except for the "
+                         "last dimension");
+    }
+  }
+  if (outputShape.back() < inputShape.back()) {
+    return emitOpError("output's last dimension must be >= input's last "
+                       "dimension (all-gather)");
   }
 
   // Verify cluster_axis is valid (must be 0 or 1 for 2D mesh).
@@ -2809,26 +2825,14 @@ static ::mlir::LogicalResult verifyTTNNBatchNormOp(OpType op) {
     return emitOpError("epsilon must be positive");
   }
 
-  // Verify residual tensor shape matches input if present.
-  if (getResidual()) {
-    RankedTensorType residualType = getResidual().getType();
-    if (residualType.getShape() != inputType.getShape()) {
-      return emitOpError("residual tensor shape must match input tensor shape");
-    }
-  }
-
-  // Verify weight tensor shape compatibility if present.
-  // Weight should be 1D with size matching input's last dimension.
+  // Weight's total number of elements must match the input's last dimension
+  // (per-device shard width). The weight may be reshaped to (N/32, 32) for
+  // ROW_MAJOR layout requirements of fused_rms_minimal.
   if (getWeight()) {
     RankedTensorType weightType = getWeight().getType();
-    ArrayRef<int64_t> inputShape = inputType.getShape();
-    int64_t lastDim = inputShape.back();
-
-    if (weightType.getRank() == 1) {
-      if (weightType.getDimSize(0) != lastDim) {
-        return emitOpError(
-            "weight tensor size must match input's last dimension");
-      }
+    if (weightType.getNumElements() != inputShape.back()) {
+      return emitOpError("weight's total number of elements must match "
+                         "input's last dimension");
     }
   }
 

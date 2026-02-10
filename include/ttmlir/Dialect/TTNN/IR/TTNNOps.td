@@ -2160,7 +2160,7 @@ def TTNN_RMSNormOp : TTNN_Op<"rms_norm", [AttrSizedOperandSegments, TTNN_MemoryC
 }
 
 def TTNN_DistributedRMSNormOp : TTNN_Op<"distributed_rms_norm",
-    [AttrSizedOperandSegments, TTNN_MemoryConfigOpInterface, TTNN_ComputeKernelConfigOpInterface]> {
+    [TTNN_MemoryConfigOpInterface, TTNN_ComputeKernelConfigOpInterface]> {
     let summary = "Distributed RMS normalization with all-gather op.";
     let description = [{
       Fused distributed RMS normalization followed by all-gather across mesh devices.
@@ -2173,7 +2173,6 @@ def TTNN_DistributedRMSNormOp : TTNN_Op<"distributed_rms_norm",
 
     let arguments = (ins AnyRankedTensor:$input,
                          Optional<AnyRankedTensor>:$weight,
-                         Optional<AnyRankedTensor>:$residual,
                          UI32Attr:$cluster_axis,
                          DefaultValuedAttr<F32Attr, "1e-12">:$epsilon,
                          OptionalAttr<UI32Attr>:$sub_device_id,

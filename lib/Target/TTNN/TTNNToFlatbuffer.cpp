@@ -1321,12 +1321,6 @@ createOp(FlatbufferObjectCache &cache, DistributedRMSNormOp op) {
         getOperandThroughDPSOps(op.getWeight()));
   }
 
-  ::flatbuffers::Offset<::tt::target::ttnn::TensorRef> residual = 0;
-  if (op.getResidual()) {
-    residual = cache.at<::tt::target::ttnn::TensorRef>(
-        getOperandThroughDPSOps(op.getResidual()));
-  }
-
   auto output =
       cache.getOrCreateNoSharding(op.getResult(), tensorValueToFlatbuffer,
                                   /*local_shape*/ std::nullopt);
@@ -1346,7 +1340,7 @@ createOp(FlatbufferObjectCache &cache, DistributedRMSNormOp op) {
       computeConfig = toFlatbuffer(cache, op.getComputeConfig());
 
   return ::tt::target::ttnn::CreateDistributedRMSNormOp(
-      *cache.fbb, input, weight, residual, op.getClusterAxis(),
+      *cache.fbb, input, weight, op.getClusterAxis(),
       op.getEpsilon().convertToFloat(), subDeviceId, memoryConfig, numLinks,
       topology, computeConfig.value_or(0), output);
 }

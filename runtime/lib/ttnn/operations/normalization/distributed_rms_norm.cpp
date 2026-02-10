@@ -24,12 +24,6 @@ void run(const ::tt::target::ttnn::DistributedRMSNormOp *op,
     weight = tensorPool.getTTNNTensorAndValidate(op->weight());
   }
 
-  // Handle optional residual parameter
-  std::optional<::ttnn::Tensor> residual = std::nullopt;
-  if (op->residual()) {
-    residual = tensorPool.getTTNNTensorAndValidate(op->residual());
-  }
-
   uint32_t clusterAxis = op->cluster_axis();
   float epsilon = op->epsilon();
 
@@ -69,13 +63,12 @@ void run(const ::tt::target::ttnn::DistributedRMSNormOp *op,
 
   // Create program config from input's shard spec
   auto shardSpec = input.shard_spec();
+  LOG_ASSERT(shardSpec.has_value(),
+             "Input tensor must have shard spec for distributed_rms_norm");
   ::ttnn::prim::LayerNormProgramConfig programConfig =
       ::ttnn::prim::create_program_config(shardSpec);
 
   // Create GlobalSemaphore from shard spec grid
-  // The semaphore is created internally at runtime (like all_gather does)
-  LOG_ASSERT(shardSpec.has_value(),
-             "Input tensor must have shard spec for distributed_rms_norm");
   auto semaphore = ::ttnn::global_semaphore::create_global_semaphore(
       &meshDevice, shardSpec->grid, 0);
 
@@ -84,8 +77,8 @@ void run(const ::tt::target::ttnn::DistributedRMSNormOp *op,
       input, programConfig, clusterAxis, meshDevice, semaphore,
       /*persistent_output_tensor=*/std::nullopt, numLinks, topology,
       subDeviceId,
-      /*dtype=*/std::nullopt, computeConfig, memoryConfig, residual, epsilon,
-      weight,
+      /*dtype=*/std::nullopt, computeConfig, memoryConfig,
+      /*residual_input_tensor=*/std::nullopt, epsilon, weight,
       /*stats=*/std::nullopt,
       /*use_noc1_only=*/false);
 

@@ -972,6 +972,80 @@ def rms_norm_golden(
     return rms_norm.to(input.dtype)
 
 
+def ttir_distributed_rms_norm_golden(
+    input: GoldenMapTensor,
+    weight: Optional[GoldenMapTensor],
+    cluster_axis_attr: IntegerAttr,
+    epsilon_attr: FloatAttr,
+    output_type_mlir: Type,
+) -> GoldenMapTensor:
+    """
+    Golden function for distributed RMS normalization with all-gather.
+
+    The input is assumed to be width-sharded (last dimension) across devices.
+    This golden reconstructs the full tensor, computes RMS norm correctly,
+    then replicates the result to all devices.
+
+    Parameters
+    ----------
+    input : GoldenMapTensor
+        Input tensor (sharded across devices)
+    weight : Optional[GoldenMapTensor]
+        Scale parameter (gamma)
+    cluster_axis_attr : IntegerAttr
+        Mesh dimension to all-gather across (0 or 1)
+    epsilon_attr : FloatAttr
+        Small constant for numerical stability
+    output_type_mlir : Type
+        MLIR type for output
+
+    Returns
+    -------
+    GoldenMapTensor
+        Normalized and gathered output tensor
+    """
+    cluster_axis = unpack_mlir_attr(cluster_axis_attr)
+    epsilon = unpack_mlir_attr(epsilon_attr)
+    output_dtype = mlir_type_to_torch_dtype(output_type_mlir)
+
+    output_shards = [None] * len(input.shard_map)
+    grouped_shards = input.group_by_axis(cluster_axis)
+
+    # Weight is sharded across devices (matching input width sharding).
+    # Reconstruct full weight by concatenating shards along the last dimension.
+    weight_grouped = weight.group_by_axis(cluster_axis) if weight is not None else None
+
+    for group_idx, group in enumerate(grouped_shards):
+        # Step 1: Reconstruct full tensor for this group by concatenating shards
+        full_tensor = torch.cat(list(group.values()), dim=-1)
+
+        # Reconstruct full weight from shards in this group
+        weight_tensor = None
+        if weight_grouped is not None:
+            weight_tensor = torch.cat(
+                list(weight_grouped[group_idx].values()), dim=-1
+            ).float()
+
+        # Step 2: Compute RMS norm on the full tensor (correct global statistics)
+        normalized_shape = [full_tensor.shape[-1]]
+        full_tensor_float = full_tensor.float()
+
+        rms_normed = torch.nn.functional.rms_norm(
+            full_tensor_float,
+            normalized_shape=normalized_shape,
+            weight=weight_tensor,
+            eps=epsilon,
+        )
+
+        # Step 3: Replicate result to all devices in this group (all-gather semantics)
+        for device_id in group.keys():
+            output_shards[device_id] = rms_normed.clone().to(output_dtype)
+
+    return GoldenMapTensor(
+        {i: t for i, t in enumerate(output_shards)}, input.mesh_shape
+    )
+
+
 def ttir_layer_norm_golden(
     input: GoldenMapTensor,
     weight: Optional[GoldenMapTensor],
@@ -5614,6 +5688,21 @@ def ttnn_mish_golden(
     return torch.nn.functional.mish(input_tensor).to(output_dtype)
 
 
+def ttnn_to_layout_golden(
+    input_tensor: GoldenMapTensor, output_type_mlir: Type
+) -> GoldenMapTensor:
+    output_dtype = mlir_type_to_torch_dtype(output_type_mlir)
+    output_tensor = input_tensor.clone()
+    return output_tensor.to(output_dtype)
+
+
+def ttnn_distribute_tensor_golden(
+    input_tensor: GoldenMapTensor, output_type_mlir: Type
+) -> GoldenMapTensor:
+    output_dtype = mlir_type_to_torch_dtype(output_type_mlir)
+    return input_tensor.clone().to(output_dtype)
+
+
 ################ Debug Op Golden Functions ###############
 
 
@@ -5739,6 +5828,7 @@ GOLDEN_MAPPINGS: Dict[type, Callable] = {
     ttir.BatchNormTrainingOp: ttir_batch_norm_training_golden,
     ttir.LayerNormOp: ttir_layer_norm_golden,
     ttir.RMSNormOp: rms_norm_golden,
+    ttir.DistributedRMSNormOp: ttir_distributed_rms_norm_golden,
     # Type operations
     ttir.TypecastOp: ttir_typecast_golden,
     # Tensor creation
@@ -5920,6 +6010,8 @@ GOLDEN_MAPPINGS: Dict[type, Callable] = {
     ttnn.RepeatInterleaveOp: ttnn_repeat_interleave_golden,
     ttnn.ClampScalarOp: ttnn_clamp_scalar_golden,
     ttnn.ClampTensorOp: ttnn_clamp_tensor_golden,
+    ttnn.ToLayoutOp: ttnn_to_layout_golden,
+    ttnn.DistributeTensorOp: ttnn_distribute_tensor_golden,
     # ----- DEBUG OPS -----
     debug.AnnotateOp: debug_annotate_golden,
     debug.BreakpointOp: debug_breakpoint_golden,

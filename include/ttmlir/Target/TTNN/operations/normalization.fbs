@@ -50,7 +50,6 @@ table RMSNormOp {
 table DistributedRMSNormOp {
   input: tt.target.ttnn.TensorRef;
   weight: tt.target.ttnn.TensorRef;
-  residual: tt.target.ttnn.TensorRef;
   cluster_axis: uint32;
   epsilon: float;
   sub_device_id: uint8 = null;

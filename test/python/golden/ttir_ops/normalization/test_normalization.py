@@ -309,7 +309,6 @@ def test_hoisted_layer_norm(
 
 # Distributed RMS norm tests
 
-
 @pytest.mark.parametrize(
     "shape",
     [
@@ -317,14 +316,10 @@ def test_hoisted_layer_norm(
     ],
     ids=shape_str,
 )
-@pytest.mark.parametrize("has_weight", [True, False])
-@pytest.mark.parametrize("has_residual", [True, False])
 @pytest.mark.parametrize("mesh_shape", [(1, 2)], ids=shape_str)
 @pytest.mark.parametrize("cluster_axis", [1])
 def test_distributed_rms_norm(
     shape: Shape,
-    has_weight: bool,
-    has_residual: bool,
     mesh_shape: Tuple[int, int],
     cluster_axis: int,
     request,
@@ -334,17 +329,13 @@ def test_distributed_rms_norm(
     Test distributed RMS normalization with all-gather across mesh devices.
 
     This test verifies the fused operation that combines:
-    1. Optional residual addition
-    2. RMS normalization
-    3. All-gather collective communication
+    1. RMS normalization
+    2. All-gather collective communication
+    3. Weight scaling
     """
-    # Determine input shapes
-    shapes = [shape]
+    # Determine input shapes: input + weight (weight is required)
     weight_shape = (shape[-1],)  # Weight matches last dimension
-    if has_weight:
-        shapes.append(weight_shape)
-    if has_residual:
-        shapes.append(shape)
+    shapes = [shape, weight_shape]
 
     # Shard dimensions for width sharding (dim 3)
     shard_dims = [-1, 3]
@@ -354,19 +345,10 @@ def test_distributed_rms_norm(
         def distributed_rms_norm_test(*inputs, unit_attrs: Optional[List[str]] = None):
             builder = inputs[-1]
 
-            # Extract inputs
             in0 = inputs[0]
-            weight = None
-            residual = None
-            input_idx = 1
+            weight = inputs[1]
 
-            if has_weight:
-                weight = inputs[input_idx]
-                input_idx += 1
-            if has_residual:
-                residual = inputs[input_idx]
-
-            # Shard input across devices
+            # Shard input across devices (width sharding on dim 3)
             shard_shape_input = make_shard_shape(len(shape), shard_dims, mesh_shape)
             sharded_input = builder.mesh_shard(
                 in0,
@@ -376,36 +358,26 @@ def test_distributed_rms_norm(
                 shard_dims=shard_dims,
             )
 
-            # Shard residual if present
-            sharded_residual = None
-            if residual is not None:
-                sharded_residual = builder.mesh_shard(
-                    residual,
-                    shard_direction=MeshShardDirection.FullToShard.value,
-                    shard_type=MeshShardType.Devices.value,
-                    shard_shape=shard_shape_input,
-                    shard_dims=shard_dims,
-                )
+            # Shard weight across devices (must match per-device input width)
+            weight_shard_dims = [-1, 0]
+            weight_shard_shape = make_shard_shape(1, weight_shard_dims, mesh_shape)
+            sharded_weight = builder.mesh_shard(
+                weight,
+                shard_direction=MeshShardDirection.FullToShard.value,
+                shard_type=MeshShardType.Devices.value,
+                shard_shape=weight_shard_shape,
+                shard_dims=weight_shard_dims,
+            )
 
             # Distributed RMS norm + all-gather
             result = builder.distributed_rms_norm(
                 sharded_input,
                 cluster_axis=cluster_axis,
-                weight=weight,
-                residual=sharded_residual,
+                weight=sharded_weight,
                 epsilon=1e-5,
             )
 
-            # Aggregate back to full tensor
-            output = builder.mesh_shard(
-                result,
-                shard_direction=MeshShardDirection.ShardToFull.value,
-                shard_type=MeshShardType.Replicate.value,
-                shard_shape=[1],
-                shard_dims=[-1],
-            )
-
-            return output
+            return result
 
     compile_and_execute_ttir(
         module,

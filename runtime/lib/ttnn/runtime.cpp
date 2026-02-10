@@ -1603,10 +1603,6 @@ getOpInputRefs(OpContext opContextHandle,
     if (opContext.type_as_DistributedRMSNormOp()->weight()) {
       tensorRefs.push_back(opContext.type_as_DistributedRMSNormOp()->weight());
     }
-    if (opContext.type_as_DistributedRMSNormOp()->residual()) {
-      tensorRefs.push_back(
-          opContext.type_as_DistributedRMSNormOp()->residual());
-    }
     break;
   }
   case ::tt::target::ttnn::OpType::LayerNormOp: {
