@@ -175,6 +175,8 @@ void createTTIRToTTMetalMiddleendPipeline(
     insertDstRegisterAccessOptions.useTileMatmul = options.useTileMatmul;
     insertDstRegisterAccessOptions.maxDstPhysicalSizeTiles =
         options.maxDstPhysicalSizeTiles;
+    insertDstRegisterAccessOptions.enablePackerL1Acc =
+        options.enablePackerL1Acc;
   }
   pm.addPass(
       d2m::createD2MInsertDstRegisterAccess(insertDstRegisterAccessOptions));
