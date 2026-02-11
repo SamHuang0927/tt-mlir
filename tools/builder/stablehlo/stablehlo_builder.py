@@ -4267,6 +4267,7 @@ class StableHLOBuilder(Builder):
 
 
 
+    @tag(stablehlo.RemOp)
     def remainder(
         self,
         in0: Operand,
@@ -4308,3 +4309,532 @@ class StableHLOBuilder(Builder):
         return op_result
 
         
+    @parse(stablehlo.RemOp)
+    def remainder_parser(
+        self,
+        old_op: stablehlo.RemOp,
+        global_dict: Dict[Operand, Operand],
+    ) -> Tuple[Operation, Dict[OpResult, OpResult]]:
+        stablehlo_op = self.get_opview_from_parser(StableHLOBuilder.remainder_parser)
+        lhs = global_dict[old_op.lhs]
+        rhs = global_dict[old_op.rhs]
+
+        new_op = stablehlo_op(
+            lhs,
+            rhs,
+            loc=old_op.location,
+            unit_attrs=old_op.unit_attrs,
+            sharding_attr=old_op.sharding_attr,
+        )
+        return new_op, {old_op.result: new_op.result}
+
+    @split(stablehlo.RemOp)
+    def remainder_split(
+        self,
+        old_op: stablehlo.RemOp,
+    ) -> Tuple[Module, StableHLOBuilder]:
+        stablehlo_op = self.get_opview_from_split(StableHLOBuilder.remainder_split)
+
+        old_context = old_op.context
+        old_loc = Location.unknown(old_context)
+        with old_context, old_loc:
+            remainder_module = Module.create()
+            remainder_builder = StableHLOBuilder(old_context, old_loc)
+            lhs = remainder_builder.placeholder(old_op.lhs.type, "lhs")
+            rhs = remainder_builder.placeholder(old_op.rhs.type, "rhs")
+            result = remainder_builder.remainder(lhs, rhs)
+            remainder_builder.return_op([result])
+        
+        return remainder_module, remainder_builder
+
+    ############### stablehlo.CompareOp - Equal ###############
+
+    @tag(stablehlo.CompareOp)
+    def equal(
+        self,
+        in0: Operand,
+        in1: Operand,
+        loc: Optional[str] = None,
+        unit_attrs: Optional[List[str]] = None,
+        sharding_attr: Optional[sdy.TensorShardingPerValueAttr] = None,
+    ) -> OpResult:
+        stablehlo_op = self.get_opview_from_method(StableHLOBuilder.equal)
+
+        if loc is None:
+            loc = self._get_location()
+        else:
+            loc = Location.name(loc)
+
+        op = stablehlo_op(
+            in0,
+            in1,
+            loc=loc,
+        )
+        op_result = op.result
+
+        if sharding_attr is not None:
+            op.operation.attributes["sdy.sharding"] = sharding_attr
+
+        if unit_attrs is not None:
+            for attr_name in unit_attrs:
+                op.operation.attributes[attr_name] = UnitAttr.get(self._ctx)
+
+        if not self._disable_golden_check:
+            input0 = self._get_golden_tensor(in0)
+            input1 = self._get_golden_tensor(in1)
+            op_golden_function = get_golden_function(stablehlo_op)
+            golden_output = op_golden_function(
+                input0, input1, op.result.type.element_type
+            )
+            self._set_golden_tensor(op_result, golden_output)
+
+        return op_result
+
+        
+    @parse(stablehlo.CompareOp)
+    def equal_parser(
+        self,
+        old_op: stablehlo.CompareOp,
+        global_dict: Dict[Operand, Operand],
+    ) -> Tuple[Operation, Dict[OpResult, OpResult]]:
+        stablehlo_op = self.get_opview_from_parser(StableHLOBuilder.equal_parser)
+        lhs = global_dict[old_op.lhs]
+        rhs = global_dict[old_op.rhs]
+
+        new_op = stablehlo_op(
+            lhs,
+            rhs,
+            loc=old_op.location,
+            unit_attrs=old_op.unit_attrs,
+            sharding_attr=old_op.sharding_attr,
+        )
+        return new_op, {old_op.result: new_op.result}
+
+    @split(stablehlo.CompareOp)
+    def equal_split(
+        self,
+        old_op: stablehlo.CompareOp,
+    ) -> Tuple[Module, StableHLOBuilder]:
+        stablehlo_op = self.get_opview_from_split(StableHLOBuilder.equal_split)
+
+        old_context = old_op.context
+        old_loc = Location.unknown(old_context)
+        with old_context, old_loc:
+            equal_module = Module.create()
+            equal_builder = StableHLOBuilder(old_context, old_loc)
+            lhs = equal_builder.placeholder(old_op.lhs.type, "lhs")
+            rhs = equal_builder.placeholder(old_op.rhs.type, "rhs")
+            result = equal_builder.equal(lhs, rhs)
+            equal_builder.return_op([result])
+        
+        return equal_module, equal_builder
+
+    ############### stablehlo.CompareOp - Not Equal ###############
+
+    @tag(stablehlo.CompareOp)
+    def not_equal(
+        self,
+        in0: Operand,
+        in1: Operand,
+        loc: Optional[str] = None,
+        unit_attrs: Optional[List[str]] = None,
+        sharding_attr: Optional[sdy.TensorShardingPerValueAttr] = None,
+    ) -> OpResult:
+        stablehlo_op = self.get_opview_from_method(StableHLOBuilder.not_equal)
+
+        if loc is None:
+            loc = self._get_location()
+        else:
+            loc = Location.name(loc)
+
+        op = stablehlo_op(
+            in0,
+            in1,
+            loc=loc,
+        )
+        op_result = op.result
+
+        if sharding_attr is not None:
+            op.operation.attributes["sdy.sharding"] = sharding_attr
+
+        if unit_attrs is not None:
+            for attr_name in unit_attrs:
+                op.operation.attributes[attr_name] = UnitAttr.get(self._ctx)
+
+        if not self._disable_golden_check:
+            input0 = self._get_golden_tensor(in0)
+            input1 = self._get_golden_tensor(in1)
+            op_golden_function = get_golden_function(stablehlo_op)
+            golden_output = op_golden_function(
+                input0, input1, op.result.type.element_type
+            )
+            self._set_golden_tensor(op_result, golden_output)
+
+        return op_result
+
+        
+    @parse(stablehlo.CompareOp)
+    def not_equal_parser(
+        self,
+        old_op: stablehlo.CompareOp,
+        global_dict: Dict[Operand, Operand],
+    ) -> Tuple[Operation, Dict[OpResult, OpResult]]:
+        stablehlo_op = self.get_opview_from_parser(StableHLOBuilder.not_equal_parser)
+        lhs = global_dict[old_op.lhs]
+        rhs = global_dict[old_op.rhs]
+
+        new_op = stablehlo_op(
+            lhs,
+            rhs,
+            loc=old_op.location,
+            unit_attrs=old_op.unit_attrs,
+            sharding_attr=old_op.sharding_attr,
+        )
+        return new_op, {old_op.result: new_op.result}
+
+    @split(stablehlo.CompareOp)
+    def not_equal_split(
+        self,
+        old_op: stablehlo.CompareOp,
+    ) -> Tuple[Module, StableHLOBuilder]:
+        stablehlo_op = self.get_opview_from_split(StableHLOBuilder.not_equal_split)
+
+        old_context = old_op.context
+        old_loc = Location.unknown(old_context)
+        with old_context, old_loc:
+            not_equal_module = Module.create()
+            not_equal_builder = StableHLOBuilder(old_context, old_loc)
+            lhs = not_equal_builder.placeholder(old_op.lhs.type, "lhs")
+            rhs = not_equal_builder.placeholder(old_op.rhs.type, "rhs")
+            result = not_equal_builder.not_equal(lhs, rhs)
+            not_equal_builder.return_op([result])
+        
+        return not_equal_module, not_equal_builder
+
+    ############### stablehlo.CompareOp - Greater Equal ###############
+
+    @tag(stablehlo.CompareOp)
+    def greater_equal(
+        self,
+        in0: Operand,
+        in1: Operand,
+        loc: Optional[str] = None,
+        unit_attrs: Optional[List[str]] = None,
+        sharding_attr: Optional[sdy.TensorShardingPerValueAttr] = None,
+    ) -> OpResult:
+        stablehlo_op = self.get_opview_from_method(StableHLOBuilder.greater_equal)
+
+        if loc is None:
+            loc = self._get_location()
+        else:
+            loc = Location.name(loc)
+
+        op = stablehlo_op(
+            in0,
+            in1,
+            loc=loc,
+        )
+        op_result = op.result
+
+        if sharding_attr is not None:
+            op.operation.attributes["sdy.sharding"] = sharding_attr
+
+        if unit_attrs is not None:
+            for attr_name in unit_attrs:
+                op.operation.attributes[attr_name] = UnitAttr.get(self._ctx)
+
+        if not self._disable_golden_check:
+            input0 = self._get_golden_tensor(in0)
+            input1 = self._get_golden_tensor(in1)
+            op_golden_function = get_golden_function(stablehlo_op)
+            golden_output = op_golden_function(
+                input0, input1, op.result.type.element_type
+            )
+            self._set_golden_tensor(op_result, golden_output)
+
+        return op_result
+
+        
+    @parse(stablehlo.CompareOp)
+    def greater_equal_parser(
+        self,
+        old_op: stablehlo.CompareOp,
+        global_dict: Dict[Operand, Operand],
+    ) -> Tuple[Operation, Dict[OpResult, OpResult]]:
+        stablehlo_op = self.get_opview_from_parser(StableHLOBuilder.greater_equal_parser)
+        lhs = global_dict[old_op.lhs]
+        rhs = global_dict[old_op.rhs]
+
+        new_op = stablehlo_op(
+            lhs,
+            rhs,
+            loc=old_op.location,
+            unit_attrs=old_op.unit_attrs,
+            sharding_attr=old_op.sharding_attr,
+        )
+        return new_op, {old_op.result: new_op.result}
+
+    @split(stablehlo.CompareOp)
+    def greater_equal_split(
+        self,
+        old_op: stablehlo.CompareOp,
+    ) -> Tuple[Module, StableHLOBuilder]:
+        stablehlo_op = self.get_opview_from_split(StableHLOBuilder.greater_equal_split)
+
+        old_context = old_op.context
+        old_loc = Location.unknown(old_context)
+        with old_context, old_loc:
+            greater_equal_module = Module.create()
+            greater_equal_builder = StableHLOBuilder(old_context, old_loc)
+            lhs = greater_equal_builder.placeholder(old_op.lhs.type, "lhs")
+            rhs = greater_equal_builder.placeholder(old_op.rhs.type, "rhs")
+            result = greater_equal_builder.greater_equal(lhs, rhs)
+            greater_equal_builder.return_op([result])
+        
+        return greater_equal_module, greater_equal_builder
+
+    ############### stablehlo.CompareOp - Greater Than ###############
+
+    @tag(stablehlo.CompareOp)
+    def greater_than(
+        self,
+        in0: Operand,
+        in1: Operand,
+        loc: Optional[str] = None,
+        unit_attrs: Optional[List[str]] = None,
+        sharding_attr: Optional[sdy.TensorShardingPerValueAttr] = None,
+    ) -> OpResult:
+        stablehlo_op = self.get_opview_from_method(StableHLOBuilder.greater_than)
+
+        if loc is None:
+            loc = self._get_location()
+        else:
+            loc = Location.name(loc)
+
+        op = stablehlo_op(
+            in0,
+            in1,
+            loc=loc,
+        )
+        op_result = op.result
+
+        if sharding_attr is not None:
+            op.operation.attributes["sdy.sharding"] = sharding_attr
+
+        if unit_attrs is not None:
+            for attr_name in unit_attrs:
+                op.operation.attributes[attr_name] = UnitAttr.get(self._ctx)
+
+        if not self._disable_golden_check:
+            input0 = self._get_golden_tensor(in0)
+            input1 = self._get_golden_tensor(in1)
+            op_golden_function = get_golden_function(stablehlo_op)
+            golden_output = op_golden_function(
+                input0, input1, op.result.type.element_type
+            )
+            self._set_golden_tensor(op_result, golden_output)
+
+        return op_result
+
+        
+    @parse(stablehlo.CompareOp)
+    def greater_than_parser(
+        self,
+        old_op: stablehlo.CompareOp,
+        global_dict: Dict[Operand, Operand],
+    ) -> Tuple[Operation, Dict[OpResult, OpResult]]:
+        stablehlo_op = self.get_opview_from_parser(StableHLOBuilder.greater_than_parser)
+        lhs = global_dict[old_op.lhs]
+        rhs = global_dict[old_op.rhs]
+
+        new_op = stablehlo_op(
+            lhs,
+            rhs,
+            loc=old_op.location,
+            unit_attrs=old_op.unit_attrs,
+            sharding_attr=old_op.sharding_attr,
+        )
+        return new_op, {old_op.result: new_op.result}
+
+    @split(stablehlo.CompareOp)
+    def greater_than_split(
+        self,
+        old_op: stablehlo.CompareOp,
+    ) -> Tuple[Module, StableHLOBuilder]:
+        stablehlo_op = self.get_opview_from_split(StableHLOBuilder.greater_than_split)
+
+        old_context = old_op.context
+        old_loc = Location.unknown(old_context)
+        with old_context, old_loc:
+            greater_than_module = Module.create()
+            greater_than_builder = StableHLOBuilder(old_context, old_loc)
+            lhs = greater_than_builder.placeholder(old_op.lhs.type, "lhs")
+            rhs = greater_than_builder.placeholder(old_op.rhs.type, "rhs")
+            result = greater_than_builder.greater_than(lhs, rhs)
+            greater_than_builder.return_op([result])
+        
+        return greater_than_module, greater_than_builder
+
+    ############### stablehlo.CompareOp - Less Equal ###############
+
+    @tag(stablehlo.CompareOp)
+    def less_equal(
+        self,
+        in0: Operand,
+        in1: Operand,
+        loc: Optional[str] = None,
+        unit_attrs: Optional[List[str]] = None,
+        sharding_attr: Optional[sdy.TensorShardingPerValueAttr] = None,
+    ) -> OpResult:
+        stablehlo_op = self.get_opview_from_method(StableHLOBuilder.less_equal)
+
+        if loc is None:
+            loc = self._get_location()
+        else:
+            loc = Location.name(loc)
+
+        op = stablehlo_op(
+            in0,
+            in1,
+            loc=loc,
+        )
+        op_result = op.result
+
+        if sharding_attr is not None:
+            op.operation.attributes["sdy.sharding"] = sharding_attr
+
+        if unit_attrs is not None:
+            for attr_name in unit_attrs:
+                op.operation.attributes[attr_name] = UnitAttr.get(self._ctx)
+
+        if not self._disable_golden_check:
+            input0 = self._get_golden_tensor(in0)
+            input1 = self._get_golden_tensor(in1)
+            op_golden_function = get_golden_function(stablehlo_op)
+            golden_output = op_golden_function(
+                input0, input1, op.result.type.element_type
+            )
+            self._set_golden_tensor(op_result, golden_output)
+
+        return op_result
+
+        
+    @parse(stablehlo.CompareOp)
+    def less_equal_parser(
+        self,
+        old_op: stablehlo.CompareOp,
+        global_dict: Dict[Operand, Operand],
+    ) -> Tuple[Operation, Dict[OpResult, OpResult]]:
+        stablehlo_op = self.get_opview_from_parser(StableHLOBuilder.less_equal_parser)
+        lhs = global_dict[old_op.lhs]
+        rhs = global_dict[old_op.rhs]
+
+        new_op = stablehlo_op(
+            lhs,
+            rhs,
+            loc=old_op.location,
+            unit_attrs=old_op.unit_attrs,
+            sharding_attr=old_op.sharding_attr,
+        )
+        return new_op, {old_op.result: new_op.result}
+
+    @split(stablehlo.CompareOp)
+    def less_equal_split(
+        self,
+        old_op: stablehlo.CompareOp,
+    ) -> Tuple[Module, StableHLOBuilder]:
+        stablehlo_op = self.get_opview_from_split(StableHLOBuilder.less_equal_split)
+
+        old_context = old_op.context
+        old_loc = Location.unknown(old_context)
+        with old_context, old_loc:
+            less_equal_module = Module.create()
+            less_equal_builder = StableHLOBuilder(old_context, old_loc)
+            lhs = less_equal_builder.placeholder(old_op.lhs.type, "lhs")
+            rhs = less_equal_builder.placeholder(old_op.rhs.type, "rhs")
+            result = less_equal_builder.less_equal(lhs, rhs)
+            less_equal_builder.return_op([result])
+        
+        return less_equal_module, less_equal_builder
+
+    ############### stablehlo.CompareOp - Less Than ###############
+
+    @tag(stablehlo.CompareOp)
+    def less_than(
+        self,
+        in0: Operand,
+        in1: Operand,
+        loc: Optional[str] = None,
+        unit_attrs: Optional[List[str]] = None,
+        sharding_attr: Optional[sdy.TensorShardingPerValueAttr] = None,
+    ) -> OpResult:
+        stablehlo_op = self.get_opview_from_method(StableHLOBuilder.less_than)
+
+        if loc is None:
+            loc = self._get_location()
+        else:
+            loc = Location.name(loc)
+
+        op = stablehlo_op(
+            in0,
+            in1,
+            loc=loc,
+        )
+        op_result = op.result
+
+        if sharding_attr is not None:
+            op.operation.attributes["sdy.sharding"] = sharding_attr
+
+        if unit_attrs is not None:
+            for attr_name in unit_attrs:
+                op.operation.attributes[attr_name] = UnitAttr.get(self._ctx)
+
+        if not self._disable_golden_check:
+            input0 = self._get_golden_tensor(in0)
+            input1 = self._get_golden_tensor(in1)
+            op_golden_function = get_golden_function(stablehlo_op)
+            golden_output = op_golden_function(
+                input0, input1, op.result.type.element_type
+            )
+            self._set_golden_tensor(op_result, golden_output)
+
+        return op_result
+
+        
+    @parse(stablehlo.CompareOp)
+    def less_than_parser(
+        self,
+        old_op: stablehlo.CompareOp,
+        global_dict: Dict[Operand, Operand],
+    ) -> Tuple[Operation, Dict[OpResult, OpResult]]:
+        stablehlo_op = self.get_opview_from_parser(StableHLOBuilder.less_than_parser)
+        lhs = global_dict[old_op.lhs]
+        rhs = global_dict[old_op.rhs]
+
+        new_op = stablehlo_op(
+            lhs,
+            rhs,
+            loc=old_op.location,
+            unit_attrs=old_op.unit_attrs,
+            sharding_attr=old_op.sharding_attr,
+        )
+        return new_op, {old_op.result: new_op.result}
+
+    @split(stablehlo.CompareOp)
+    def less_than_split(
+        self,
+        old_op: stablehlo.CompareOp,
+    ) -> Tuple[Module, StableHLOBuilder]:
+        stablehlo_op = self.get_opview_from_split(StableHLOBuilder.less_than_split)
+
+        old_context = old_op.context
+        old_loc = Location.unknown(old_context)
+        with old_context, old_loc:
+            less_than_module = Module.create()
+            less_than_builder = StableHLOBuilder(old_context, old_loc)
+            lhs = less_than_builder.placeholder(old_op.lhs.type, "lhs")
+            rhs = less_than_builder.placeholder(old_op.rhs.type, "rhs")
+            result = less_than_builder.less_than(lhs, rhs)
+            less_than_builder.return_op([result])
+        
+        return less_than_module, less_than_builder

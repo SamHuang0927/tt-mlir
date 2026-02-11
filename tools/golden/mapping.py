@@ -4853,6 +4853,43 @@ def stablehlo_reduce_scatter_golden(
     raise NotImplementedError("stablehlo_reduce_scatter_golden is not implemented yet.")
 
 
+def stablehlo_compare_golden(
+    input_tensor: GoldenMapTensor,
+    other_tensor: GoldenMapTensor,
+    output_type_mlir: Type,
+    comparison_direction: Optional[str] = None,
+) -> GoldenMapTensor:
+    """
+    Golden function for stablehlo.CompareOp operation.
+    
+    Performs element-wise comparison based on comparison_direction.
+    """
+    output_dtype = mlir_type_to_torch_dtype(output_type_mlir)
+    
+    # Default to equal if direction not specified
+    if comparison_direction is None:
+        comparison_direction = "EQ"
+    
+    # Perform comparison based on direction
+    if comparison_direction == "EQ":
+        result = torch.eq(input_tensor, other_tensor)
+    elif comparison_direction == "NE":
+        result = torch.ne(input_tensor, other_tensor)
+    elif comparison_direction == "GE":
+        result = torch.ge(input_tensor, other_tensor)
+    elif comparison_direction == "GT":
+        result = torch.gt(input_tensor, other_tensor)
+    elif comparison_direction == "LE":
+        result = torch.le(input_tensor, other_tensor)
+    elif comparison_direction == "LT":
+        result = torch.lt(input_tensor, other_tensor)
+    else:
+        raise ValueError(f"Unknown comparison direction: {comparison_direction}")
+    
+    # Convert to output dtype (usually bool for comparison ops)
+    return result.to(output_dtype)
+
+
 def stablehlo_pad_golden(
     input_tensor: GoldenMapTensor,
     value: GoldenMapTensor,
@@ -5919,6 +5956,7 @@ GOLDEN_MAPPINGS: Dict[type, Callable] = {
     stablehlo.FloorOp: stablehlo_floor_golden,
     stablehlo.ConstantOp: stablehlo_constant_golden,
     stablehlo.IotaOp: stablehlo_iota_golden,
+    stablehlo.CompareOp: stablehlo_compare_golden,
     stablehlo.DynamicIotaOp: stablehlo_dynamic_iota_golden,
     stablehlo.BatchNormGradOp: stablehlo_batch_norm_grad_golden,
     stablehlo.BatchNormTrainingOp: stablehlo_batch_norm_training_golden,
@@ -5956,6 +5994,8 @@ GOLDEN_MAPPINGS: Dict[type, Callable] = {
     stablehlo.TransposeOp: stablehlo_transpose_golden,
     stablehlo.SelectOp: stablehlo_select_golden,
     stablehlo.PadOp: stablehlo_pad_golden,
+    # Elementwise binary operations
+    stablehlo.RemOp: torch.remainder,
     # CCL (Collective Communication Library) operations
     stablehlo.AllGatherOp: stablehlo_all_gather_golden,
     stablehlo.AllReduceOp: stablehlo_all_reduce_golden,
