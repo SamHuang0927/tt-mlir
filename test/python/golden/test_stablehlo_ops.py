@@ -385,6 +385,101 @@ def module_subtract(builder: StableHLOBuilder):
         return builder.subtract(in0, in1, unit_attrs=unit_attrs)
 
 
+def module_divide(builder: StableHLOBuilder):
+    @builder.func([(128, 128), (128, 128)], [torch.float32, torch.float32])
+    def divide(
+        in0: Operand,
+        in1: Operand,
+        builder: StableHLOBuilder,
+        unit_attrs: Optional[List[str]] = None,
+    ):
+        builder.set_graph_level_check(True)
+        return builder.divide(in0, in1, unit_attrs=unit_attrs)
+
+
+def module_remainder(builder: StableHLOBuilder):
+    @builder.func([(128, 128), (128, 128)], [torch.float32, torch.float32])
+    def remainder(
+        in0: Operand,
+        in1: Operand,
+        builder: StableHLOBuilder,
+        unit_attrs: Optional[List[str]] = None,
+    ):
+        builder.set_graph_level_check(True)
+        return builder.remainder(in0, in1, unit_attrs=unit_attrs)
+
+
+def module_equal(builder: StableHLOBuilder):
+    @builder.func([(128, 128), (128, 128)], [torch.float32, torch.float32])
+    def equal(
+        in0: Operand,
+        in1: Operand,
+        builder: StableHLOBuilder,
+        unit_attrs: Optional[List[str]] = None,
+    ):
+        builder.set_graph_level_check(True)
+        return builder.equal(in0, in1, unit_attrs=unit_attrs)
+
+
+def module_not_equal(builder: StableHLOBuilder):
+    @builder.func([(128, 128), (128, 128)], [torch.float32, torch.float32])
+    def not_equal(
+        in0: Operand,
+        in1: Operand,
+        builder: StableHLOBuilder,
+        unit_attrs: Optional[List[str]] = None,
+    ):
+        builder.set_graph_level_check(True)
+        return builder.not_equal(in0, in1, unit_attrs=unit_attrs)
+
+
+def module_greater_equal(builder: StableHLOBuilder):
+    @builder.func([(128, 128), (128, 128)], [torch.float32, torch.float32])
+    def greater_equal(
+        in0: Operand,
+        in1: Operand,
+        builder: StableHLOBuilder,
+        unit_attrs: Optional[List[str]] = None,
+    ):
+        builder.set_graph_level_check(True)
+        return builder.greater_equal(in0, in1, unit_attrs=unit_attrs)
+
+
+def module_greater_than(builder: StableHLOBuilder):
+    @builder.func([(128, 128), (128, 128)], [torch.float32, torch.float32])
+    def greater_than(
+        in0: Operand,
+        in1: Operand,
+        builder: StableHLOBuilder,
+        unit_attrs: Optional[List[str]] = None,
+    ):
+        builder.set_graph_level_check(True)
+        return builder.greater_than(in0, in1, unit_attrs=unit_attrs)
+
+
+def module_less_equal(builder: StableHLOBuilder):
+    @builder.func([(128, 128), (128, 128)], [torch.float32, torch.float32])
+    def less_equal(
+        in0: Operand,
+        in1: Operand,
+        builder: StableHLOBuilder,
+        unit_attrs: Optional[List[str]] = None,
+    ):
+        builder.set_graph_level_check(True)
+        return builder.less_equal(in0, in1, unit_attrs=unit_attrs)
+
+
+def module_less_than(builder: StableHLOBuilder):
+    @builder.func([(128, 128), (128, 128)], [torch.float32, torch.float32])
+    def less_than(
+        in0: Operand,
+        in1: Operand,
+        builder: StableHLOBuilder,
+        unit_attrs: Optional[List[str]] = None,
+    ):
+        builder.set_graph_level_check(True)
+        return builder.less_than(in0, in1, unit_attrs=unit_attrs)
+
 def module_broadcast_in_dim(builder: StableHLOBuilder):
     @builder.func([(128, 128), (128, 128)], [torch.float32, torch.float32])
     def broadcast_in_dim(

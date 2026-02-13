@@ -915,7 +915,8 @@ class StableHLOBuilder(Builder):
             input1 = self._get_golden_tensor(in1)
             op_golden_function = get_golden_function(stablehlo_op)
             golden_output = op_golden_function(
-                input0, input1, op.result.type.element_type
+                input0, input1, op.result.type.element_type,
+                comparison_direction="EQ"
             )
             self._set_golden_tensor(op_result, golden_output)
 
@@ -4302,7 +4303,8 @@ class StableHLOBuilder(Builder):
             input1 = self._get_golden_tensor(in1)
             op_golden_function = get_golden_function(stablehlo_op)
             golden_output = op_golden_function(
-                input0, input1, op.result.type.element_type
+                input0, input1, op.result.type.element_type,
+                comparison_direction="NE"
             )
             self._set_golden_tensor(op_result, golden_output)
 
@@ -4368,6 +4370,7 @@ class StableHLOBuilder(Builder):
         op = stablehlo_op(
             in0,
             in1,
+            comparison_direction="EQ",
             loc=loc,
         )
         op_result = op.result
@@ -4384,7 +4387,8 @@ class StableHLOBuilder(Builder):
             input1 = self._get_golden_tensor(in1)
             op_golden_function = get_golden_function(stablehlo_op)
             golden_output = op_golden_function(
-                input0, input1, op.result.type.element_type
+                input0, input1, op.result.type.element_type,
+                comparison_direction="GE"
             )
             self._set_golden_tensor(op_result, golden_output)
 
@@ -4450,6 +4454,7 @@ class StableHLOBuilder(Builder):
         op = stablehlo_op(
             in0,
             in1,
+            comparison_direction="NE",
             loc=loc,
         )
         op_result = op.result
@@ -4466,7 +4471,8 @@ class StableHLOBuilder(Builder):
             input1 = self._get_golden_tensor(in1)
             op_golden_function = get_golden_function(stablehlo_op)
             golden_output = op_golden_function(
-                input0, input1, op.result.type.element_type
+                input0, input1, op.result.type.element_type,
+                comparison_direction="GT"
             )
             self._set_golden_tensor(op_result, golden_output)
 
@@ -4532,6 +4538,7 @@ class StableHLOBuilder(Builder):
         op = stablehlo_op(
             in0,
             in1,
+            comparison_direction="GE",
             loc=loc,
         )
         op_result = op.result
@@ -4548,7 +4555,8 @@ class StableHLOBuilder(Builder):
             input1 = self._get_golden_tensor(in1)
             op_golden_function = get_golden_function(stablehlo_op)
             golden_output = op_golden_function(
-                input0, input1, op.result.type.element_type
+                input0, input1, op.result.type.element_type,
+                comparison_direction="LE"
             )
             self._set_golden_tensor(op_result, golden_output)
 
@@ -4614,6 +4622,7 @@ class StableHLOBuilder(Builder):
         op = stablehlo_op(
             in0,
             in1,
+            comparison_direction="GT",
             loc=loc,
         )
         op_result = op.result
@@ -4630,7 +4639,8 @@ class StableHLOBuilder(Builder):
             input1 = self._get_golden_tensor(in1)
             op_golden_function = get_golden_function(stablehlo_op)
             golden_output = op_golden_function(
-                input0, input1, op.result.type.element_type
+                input0, input1, op.result.type.element_type,
+                comparison_direction="LT"
             )
             self._set_golden_tensor(op_result, golden_output)
 
@@ -4696,6 +4706,7 @@ class StableHLOBuilder(Builder):
         op = stablehlo_op(
             in0,
             in1,
+            comparison_direction="LE",
             loc=loc,
         )
         op_result = op.result
@@ -4778,6 +4789,7 @@ class StableHLOBuilder(Builder):
         op = stablehlo_op(
             in0,
             in1,
+            comparison_direction="LT",
             loc=loc,
         )
         op_result = op.result
