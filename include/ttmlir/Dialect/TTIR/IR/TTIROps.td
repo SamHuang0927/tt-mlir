@@ -4808,7 +4808,7 @@ def TTIR_ArangeOp : TTIR_CreationOp<"arange"> {
         end = 5 : si64,
         step = 1 : si64,
         arange_dimension = 0 : i64
-    } : () -> tensor<5xi64>
+    } : () -> tensor<5xi64, dtype = i64>
 
     // Generate a 1D tensor with values [0.0, 2.0, 4.0, 6.0, 8.0]
     %result = ttir.arange() {
@@ -4816,7 +4816,7 @@ def TTIR_ArangeOp : TTIR_CreationOp<"arange"> {
         end = 10 : si64,
         step = 2 : si64,
         arange_dimension = 0 : i64
-    } : () -> tensor<5xf32>
+    } : () -> tensor<5xf32, dtype = f32>
 
     // Generate a 2D tensor with the sequence along dimension 0
     %result = ttir.arange() {
@@ -4824,7 +4824,7 @@ def TTIR_ArangeOp : TTIR_CreationOp<"arange"> {
         end = 5 : si64,
         step = 1 : si64,
         arange_dimension = 0 : i64
-    } : () -> tensor<5x3xi64>
+    } : () -> tensor<5x3xi64, dtype = i64>
     // Result:
     // [[0, 0, 0],
     //  [1, 1, 1],
@@ -4838,7 +4838,7 @@ def TTIR_ArangeOp : TTIR_CreationOp<"arange"> {
         end = 3 : si64,
         step = 1 : si64,
         arange_dimension = 1 : i64
-    } : () -> tensor<5x3xi64>
+    } : () -> tensor<5x3xi64, dtype = i64>
     // Result:
     // [[0, 1, 2],
     //  [0, 1, 2],
@@ -4852,6 +4852,7 @@ def TTIR_ArangeOp : TTIR_CreationOp<"arange"> {
     - `end` (Integer): The end value of the sequence (exclusive).
     - `step` (Integer): The step size between values in the sequence.
     - `arange_dimension` (Integer): The dimension along which to generate the sequence.
+    - `dtype` (Type): The data type of the output tensor.
 
     Output:
     - `result` (Tensor): The generated tensor containing the sequence.
@@ -4860,7 +4861,8 @@ def TTIR_ArangeOp : TTIR_CreationOp<"arange"> {
   let arguments = (ins SI64Attr:$start,
                        SI64Attr:$end,
                        SI64Attr:$step,
-                       I64Attr:$arange_dimension);
+                       I64Attr:$arange_dimension,
+                       TypeAttr:$dtype);
 
   let results = (outs AnyRankedTensor:$result);
   let hasVerifier = 1;
@@ -4975,6 +4977,7 @@ class TTIR_NamedFullOp<string mnemonic, list<Trait> traits = []> :
 
     Attributes:
     - `shape` (Array of Integer): The shape of the tensor to create.
+    - `dtype` (Type): The data type of the output tensor.
 
     Output:
     - `result` (Tensor): The created tensor with the specified shape.
@@ -4984,7 +4987,8 @@ class TTIR_NamedFullOp<string mnemonic, list<Trait> traits = []> :
     by providing common argument and result definitions.
   }];
 
-  let arguments = (ins DenseI32ArrayAttr:$shape);
+  let arguments = (ins DenseI32ArrayAttr:$shape,
+                       TypeAttr:$dtype);
 
   let results = (outs AnyRankedTensor:$result);
 }
@@ -5002,13 +5006,13 @@ def TTIR_ZerosOp : TTIR_NamedFullOp<"zeros"> {
     // Create a 3D tensor of zeros with shape [64, 28, 28]
     %result = ttir.zeros() {
         shape = [64, 28, 28]
-    } : () -> tensor<64x28x28xbf16>
+    } : () -> tensor<64x28x28xbf16, dtype = bf16>
     // Result: A tensor of shape [64, 28, 28] filled with zeros
 
     // Create a 2D tensor of zeros with shape [3, 4]
     %result = ttir.zeros() {
         shape = [3, 4]
-    } : () -> tensor<3x4xf32>
+    } : () -> tensor<3x4xf32, dtype = f32>
     // Result: [[0.0, 0.0, 0.0, 0.0],
     //          [0.0, 0.0, 0.0, 0.0],
     //          [0.0, 0.0, 0.0, 0.0]]
@@ -5016,6 +5020,7 @@ def TTIR_ZerosOp : TTIR_NamedFullOp<"zeros"> {
 
     Attributes:
     - `shape` (Array of Integer): The shape of the tensor to create.
+    - `dtype` (Type): The data type of the output tensor.
 
     Output:
     - `result` (Tensor): The tensor filled with zeros.
@@ -5039,13 +5044,13 @@ def TTIR_OnesOp : TTIR_NamedFullOp<"ones"> {
     // Create a 3D tensor of ones with shape [64, 28, 28]
     %result = ttir.ones() {
         shape = [64, 28, 28]
-    } : () -> tensor<64x28x28xbf16>
+    } : () -> tensor<64x28x28xbf16, dtype = bf16>
     // Result: A tensor of shape [64, 28, 28] filled with ones
 
     // Create a 2D tensor of ones with shape [3, 4]
     %result = ttir.ones() {
         shape = [3, 4]
-    } : () -> tensor<3x4xf32>
+    } : () -> tensor<3x4xf32, dtype = f32>
     // Result: [[1.0, 1.0, 1.0, 1.0],
     //          [1.0, 1.0, 1.0, 1.0],
     //          [1.0, 1.0, 1.0, 1.0]]
@@ -5053,6 +5058,7 @@ def TTIR_OnesOp : TTIR_NamedFullOp<"ones"> {
 
     Attributes:
     - `shape` (Array of Integer): The shape of the tensor to create.
+    - `dtype` (Type): The data type of the output tensor.
 
     Output:
     - `result` (Tensor): The tensor filled with ones.
